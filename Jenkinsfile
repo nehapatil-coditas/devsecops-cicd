@@ -102,28 +102,17 @@ pipeline {
         }
 
         //  (5) PUSH DOCKER IMAGE TO REGISTRY
-        // stage('Push Docker Image to Registry') {
-        //     when { expression { params.environment == 'dev' } }
-        //     steps {
-        //         echo "📤 Pushing Docker image to registry..."
+        stage('Build & Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'DOCKER_HUB_CREDS') {
+                        def img = docker.build("nehapatil104/devsecops-demo")
+                        img.push("${BUILD_ID}")
+                    }
+                }
+            }
+        }
 
-        //         withCredentials([usernamePassword(
-        //             credentialsId: 'DOCKER_REGISTRY_CREDS',   // configure in Jenkins Credentials
-        //             usernameVariable: 'REG_USER',
-        //             passwordVariable: 'REG_PASS'
-        //         )]) {
-
-        //             sh """
-        //                 echo "$REG_PASS" | docker login -u "$REG_USER" --password-stdin <your-registry-url>
-
-        //                 docker tag my-app-image <your-registry-url>/my-app:latest
-        //                 docker push <your-registry-url>/my-app:latest
-        //             """
-        //         }
-
-        //         echo "✅ Image pushed to registry successfully."
-        //     }
-        // }
 
         //  (6) DEPLOY BACKEND (ONLY IF ALL SCANS PASS)
         stage('Deploy Backend') {
