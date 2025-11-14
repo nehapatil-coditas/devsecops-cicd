@@ -1,0 +1,25 @@
+# Build output
+target/
+
+# IDEs
+.idea/
+.project
+.classpath
+.settings/
+.vscode/
+
+# OS files
+*.log
+*.swp
+.DS_Store
+
+# Maven
+*.iml
+.mvn/wrapper/maven-wrapper.jar
+
+# Git
+.git/
+
+# Docker
+.dockerignore
+
