@@ -41,8 +41,12 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'DOCKER_HUB_CREDS') {
-                        def img = docker.build("nehapatil104/devsecops-demo")
-                        img.push("${BUILD_ID}")
+                        sh 'echo --- DEBUG: Starting docker build ---'
+                        sh 'docker build -t nehapatil104/devsecops-demo:${BUILD_ID} .'
+                        sh 'echo --- DEBUG: Build completed ---'
+
+                        sh 'echo --- DEBUG: Pushing image ---'
+                        sh 'docker push nehapatil104/devsecops-demo:${BUILD_ID}'
                     }
                     echo "✅ Docker image pushed."
                 }
