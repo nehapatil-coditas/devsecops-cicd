@@ -44,7 +44,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDS') {
+                    docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDENTIALS') {
                         def img = docker.image("${env.DOCKER_IMAGE}")
                         img.push()
                     }
