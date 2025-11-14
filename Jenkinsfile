@@ -30,8 +30,10 @@ pipeline {
         stage('Build Docker Image') {
             when { expression { params.environment == 'dev' } }
             steps {
-                echo "Building Docker image..."
-                sh "docker build -t my-app-image ."
+                def IMAGE_TAG = "nehapatil104/devsecops-demo:${BUILD_ID}"
+                echo "Building Docker image with tag: ${IMAGE_TAG}..."
+                sh "docker build -t ${IMAGE_TAG} ."
+                env.DOCKER_IMAGE = IMAGE_TAG
                 echo "✅ Docker image build completed."
             }
         }
@@ -41,10 +43,10 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDS') {
-                        def img = docker.build("nehapatil104/devsecops-demo:${BUILD_ID}")
+                        def img = docker.image("${env.DOCKER_IMAGE}")
                         img.push()
                     }
-                    echo "✅ Docker image pushed."
+                    echo "✅ Docker image pushed: ${env.DOCKER_IMAGE}"
                 }
             }
         }
@@ -102,7 +104,7 @@ pipeline {
                 echo "🔎 Running Trivy scan on Docker image..."
 
                 sh """
-                    trivy image my-app-image \
+                    trivy image ${env.DOCKER_IMAGE} \
                         --format template \
                         --template "@/usr/local/share/trivy/templates/html.tpl" \
                         --output trivy-report.html \
