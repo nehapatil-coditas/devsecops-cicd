@@ -26,6 +26,29 @@ pipeline {
             }
         }
 
+        //  (3) BUILD DOCKER IMAGE (AFTER SCANS)
+        stage('Build Docker Image') {
+            when { expression { params.environment == 'dev' } }
+            steps {
+                echo "Building Docker image..."
+                sh "docker build -t my-app-image ."
+                echo "✅ Docker image build completed."
+            }
+        }
+
+        //  (5) PUSH DOCKER IMAGE TO REGISTRY
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'DOCKER_HUB_CREDS') {
+                        def img = docker.build("nehapatil104/devsecops-demo")
+                        img.push("${BUILD_ID}")
+                    }
+                    echo "✅ Docker image pushed."
+                }
+            }
+        }
+
         //   (2) PARALLEL STATIC SCANS (OWASP + SONAR)
         stage('Static Security Scans') {
             when { expression { params.environment == 'dev' } }
@@ -72,16 +95,6 @@ pipeline {
             }
         }
 
-        //  (3) BUILD DOCKER IMAGE (AFTER SCANS)
-        stage('Build Docker Image') {
-            when { expression { params.environment == 'dev' } }
-            steps {
-                echo "Building Docker image..."
-                sh "docker build -t my-app-image ."
-                echo "✅ Docker image build completed."
-            }
-        }
-
         //  (4) TRIVY SCAN ON DOCKER IMAGE
         stage('Trivy Image Scan') {
             when { expression { params.environment == 'dev' } }
@@ -100,19 +113,6 @@ pipeline {
                 echo "✅ Trivy scan completed."
             }
         }
-
-        //  (5) PUSH DOCKER IMAGE TO REGISTRY
-        stage('Build & Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'DOCKER_HUB_CREDS') {
-                        def img = docker.build("nehapatil104/devsecops-demo")
-                        img.push("${BUILD_ID}")
-                    }
-                }
-            }
-        }
-
 
         //  (6) DEPLOY BACKEND (ONLY IF ALL SCANS PASS)
         stage('Deploy Backend') {
