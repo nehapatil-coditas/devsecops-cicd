@@ -30,11 +30,13 @@ pipeline {
         stage('Build Docker Image') {
             when { expression { params.environment == 'dev' } }
             steps {
-                def IMAGE_TAG = "nehapatil104/devsecops-demo:${BUILD_ID}"
-                echo "Building Docker image with tag: ${IMAGE_TAG}..."
-                sh "docker build -t ${IMAGE_TAG} ."
-                env.DOCKER_IMAGE = IMAGE_TAG
-                echo "✅ Docker image build completed."
+                script{
+                    def IMAGE_TAG = "nehapatil104/devsecops-demo:${BUILD_ID}"
+                    echo "Building Docker image with tag: ${IMAGE_TAG}..."
+                    sh "docker build -t ${IMAGE_TAG} ."
+                    env.DOCKER_IMAGE = IMAGE_TAG
+                    echo "✅ Docker image built: ${env.DOCKER_IMAGE}"
+                }
             }
         }
 
