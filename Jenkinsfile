@@ -26,33 +26,6 @@ pipeline {
             }
         }
 
-        //  (3) BUILD DOCKER IMAGE (AFTER SCANS)
-        stage('Build Docker Image') {
-            when { expression { params.environment == 'dev' } }
-            steps {
-                script{
-                    def IMAGE_TAG = "nehapatil104/devsecops-demo:${BUILD_ID}"
-                    echo "Building Docker image with tag: ${IMAGE_TAG}..."
-                    sh "docker build -t ${IMAGE_TAG} ."
-                    env.DOCKER_IMAGE = IMAGE_TAG
-                    echo "✅ Docker image built: ${env.DOCKER_IMAGE}"
-                }
-            }
-        }
-
-        //  (5) PUSH DOCKER IMAGE TO REGISTRY
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDENTIALS') {
-                        def img = docker.image("${env.DOCKER_IMAGE}")
-                        img.push()
-                    }
-                    echo "✅ Docker image pushed: ${env.DOCKER_IMAGE}"
-                }
-            }
-        }
-
         //   (2) PARALLEL STATIC SCANS (OWASP + SONAR)
         stage('Static Security Scans') {
             when { expression { params.environment == 'dev' } }
@@ -99,7 +72,21 @@ pipeline {
             }
         }
 
-        //  (4) TRIVY SCAN ON DOCKER IMAGE
+        //  (3) BUILD DOCKER IMAGE (AFTER SCANS) ONLY IF STATIC SCAN PASSES
+        stage('Build Docker Image') {
+            when { expression { params.environment == 'dev' } }
+            steps {
+                script{
+                    def IMAGE_TAG = "nehapatil104/devsecops-demo:${BUILD_ID}"
+                    echo "Building Docker image with tag: ${IMAGE_TAG}..."
+                    sh "docker build -t ${IMAGE_TAG} ."
+                    env.DOCKER_IMAGE = IMAGE_TAG
+                    echo "✅ Docker image built: ${env.DOCKER_IMAGE}"
+                }
+            }
+        }
+
+        //  (4) TRIVY SCAN ON DOCKER IMAGE 
         stage('Trivy Image Scan') {
             when { expression { params.environment == 'dev' } }
             steps {
@@ -115,6 +102,19 @@ pipeline {
                 """
 
                 echo "✅ Trivy scan completed."
+            }
+        }
+
+         //  (5) PUSH DOCKER IMAGE TO REGISTRY ONLY IF IMAGE SCAN PASSES
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDENTIALS') {
+                        def img = docker.image("${env.DOCKER_IMAGE}")
+                        img.push()
+                    }
+                    echo "✅ Docker image pushed: ${env.DOCKER_IMAGE}"
+                }
             }
         }
 
