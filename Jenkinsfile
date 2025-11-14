@@ -16,27 +16,22 @@ pipeline {
     }
 
     stages {
-
-        /* -------------------------------------------------
-         * (1) BUILD APPLICATION (MAVEN)
-         * ------------------------------------------------- */
+        //  (1) BUILD APPLICATION (MAVEN)
         stage('Build Application') {
             when { expression { params.environment == 'dev' } }
             steps {
-                echo "📦 Building Maven application..."
+                echo "Building Maven application..."
                 sh "mvn clean package -DskipTests"
                 echo "✅ Application build completed."
             }
         }
 
-        /* -------------------------------------------------
-         * (2) PARALLEL STATIC SCANS (OWASP + SONAR)
-         * ------------------------------------------------- */
+        //   (2) PARALLEL STATIC SCANS (OWASP + SONAR)
         stage('Static Security Scans') {
             when { expression { params.environment == 'dev' } }
             parallel {
 
-                /* ----- OWASP ----- */
+                //  ----- OWASP ----- 
                 stage('OWASP Dependency Check') {
                     steps {
                         echo "Running OWASP Dependency Check..."
@@ -44,50 +39,45 @@ pipeline {
                         dependencyCheck additionalArguments: """
                             -o './dependency-check-report'
                             --scan ./target/*.jar
-                            --format XML
                             --format HTML
                             --prettyPrint
+                            --failOnCVSS 7
                         """,
                         odcInstallation: 'OWASP-Dependency-Check'
-
-                        dependencyCheckPublisher pattern: 'dependency-check-report/dependency-check-report.xml'
 
                         echo "✅ OWASP Dependency Check complete."
                     }
                 }
 
-                /* ----- SONARQUBE ----- */
+                //  ----- SONARQUBE ----- 
                 stage('SonarQube Analysis') {
                     steps {
-                        echo "🔍 Running SonarQube Analysis..."
+                        echo "Running SonarQube Analysis..."
 
                         withSonarQubeEnv('SonarQube') {
-                            sh """
-                                mvn sonar:sonar 
-                            """
+                            sh 'mvn sonar:sonar '
                         }
-
-                        echo "✅ SonarQube Analysis complete."
+                        echo "✅ SonarQube Analysis complete. Waiting for Quality Gate result..."
+                        script {
+                            def qg = waitForQualityGate abortPipeline: true
+                            echo "Quality Gate status: ${qg.status}"
+                        }
                     }
                 }
             }
         }
 
-        /* -------------------------------------------------
-         * (3) BUILD DOCKER IMAGE (AFTER SCANS)
-         * ------------------------------------------------- */
+        //  (3) BUILD DOCKER IMAGE (AFTER SCANS)
         stage('Build Docker Image') {
             when { expression { params.environment == 'dev' } }
             steps {
-                echo "🐳 Building Docker image..."
+                echo "Building Docker image..."
                 sh "docker build -t my-app-image ."
                 echo "✅ Docker image build completed."
             }
         }
 
-        /* -------------------------------------------------
-         * (4) TRIVY SCAN ON DOCKER IMAGE
-         * ------------------------------------------------- */
+        //  (4) TRIVY SCAN ON DOCKER IMAGE
         stage('Trivy Image Scan') {
             when { expression { params.environment == 'dev' } }
             steps {
@@ -106,9 +96,7 @@ pipeline {
             }
         }
 
-        /* -------------------------------------------------
-         * (5) PUSH DOCKER IMAGE TO REGISTRY
-         * ------------------------------------------------- */
+        //  (5) PUSH DOCKER IMAGE TO REGISTRY
         // stage('Push Docker Image to Registry') {
         //     when { expression { params.environment == 'dev' } }
         //     steps {
@@ -132,19 +120,14 @@ pipeline {
         //     }
         // }
 
-        /* -------------------------------------------------
-         * (6) DEPLOY BACKEND (ONLY IF ALL SCANS PASS)
-         * ------------------------------------------------- */
+        //  (6) DEPLOY BACKEND (ONLY IF ALL SCANS PASS)
         stage('Deploy Backend') {
             when { expression { params.environment == 'dev' } }
             steps {
                 echo "🚀 Deploying backend..."
 
-                // Example:
-                // sh "ssh ubuntu@backend-server 'docker stop app || true && docker rm app || true'"
-                // sh "ssh ubuntu@backend-server 'docker load < my-app-image.tar'"
-                // sh "ssh ubuntu@backend-server 'docker run -d --name app -p 8080:8080 my-app-image'"
-
+                // Your deployment code.
+                
                 echo "✅ Deployment completed."
             }
         }
@@ -152,7 +135,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/*.html, **/*.xml', fingerprint: true
+            archiveArtifacts artifacts: '**/*.html', fingerprint: true
             cleanWs(notFailBuild: true)
         }
     }
