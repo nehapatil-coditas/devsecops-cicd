@@ -45,7 +45,7 @@ pipeline {
                         """,
                         odcInstallation: 'OWASP-Dependency-Check'
 
-                        dependencyCheckPublisher pattern: '**/dependency-check-report/*.html', 
+                        dependencyCheckPublisher pattern: 'dependency-check-report/dependency-check-report.html', 
                                  failedTotalCritical: 0,
                                  failedTotalHigh: 0
                         
