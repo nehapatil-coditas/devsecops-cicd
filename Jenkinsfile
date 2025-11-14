@@ -40,14 +40,15 @@ pipeline {
                             -o './dependency-check-report'
                             --scan ./target/*.jar
                             --format HTML
+                            --format XML
                             --prettyPrint
                             --failOnCVSS 7
                         """,
                         odcInstallation: 'OWASP-Dependency-Check'
 
-                        dependencyCheckPublisher pattern: 'dependency-check-report/dependency-check-report.html', 
-                                 failedTotalCritical: 0,
-                                 failedTotalHigh: 0
+                        dependencyCheckPublisher pattern: 'dependency-check-report/dependency-check-report.xml', 
+                                 failedTotalCritical: 1,
+                                 failedTotalHigh: 1
                         
                         echo "OWASP Dependency Check stage complete."
                     }
