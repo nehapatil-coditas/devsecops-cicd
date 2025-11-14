@@ -45,7 +45,11 @@ pipeline {
                         """,
                         odcInstallation: 'OWASP-Dependency-Check'
 
-                        echo "✅ OWASP Dependency Check complete."
+                        dependencyCheckPublisher pattern: '**/dependency-check-report/*.html', 
+                                 failedTotalCritical: 0,
+                                 failedTotalHigh: 0
+                        
+                        echo "OWASP Dependency Check stage complete."
                     }
                 }
 
